@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Dictionary } from "@/lib/i18n";
+import type { Dictionary, Locale } from "@/lib/i18n";
 
 const initialState: AuthFormState = {};
 
@@ -20,7 +20,7 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function SignupForm({ dict }: { dict: Dictionary }) {
+export function SignupForm({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const [state, formAction] = useFormState(signupAction, initialState);
 
   return (
@@ -56,6 +56,34 @@ export function SignupForm({ dict }: { dict: Dictionary }) {
       </div>
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+
+      <p className="text-xs text-muted-foreground">
+        {locale === "fr" ? (
+          <>
+            En créant un compte, vous acceptez nos{" "}
+            <Link href="/terms" className="underline hover:text-foreground">
+              conditions d&apos;utilisation
+            </Link>{" "}
+            et notre{" "}
+            <Link href="/privacy" className="underline hover:text-foreground">
+              politique de confidentialité
+            </Link>
+            .
+          </>
+        ) : (
+          <>
+            By creating an account, you agree to our{" "}
+            <Link href="/terms" className="underline hover:text-foreground">
+              Terms of Use
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline hover:text-foreground">
+              Privacy Policy
+            </Link>
+            .
+          </>
+        )}
+      </p>
 
       <SubmitButton label={dict.auth.signupButton} />
 

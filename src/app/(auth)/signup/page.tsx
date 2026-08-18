@@ -3,7 +3,7 @@ import { getDictionary } from "@/lib/i18n";
 import { SignupForm } from "./signup-form";
 
 export default async function SignupPage() {
-  const { dict } = await getDictionary();
+  const { dict, locale } = await getDictionary();
 
   return (
     <Card className="w-full max-w-md">
@@ -12,7 +12,7 @@ export default async function SignupPage() {
         <CardDescription>{dict.landing.subheadline}</CardDescription>
       </CardHeader>
       <CardContent>
-        <SignupForm dict={dict} />
+        <SignupForm dict={dict} locale={locale} />
       </CardContent>
     </Card>
   );

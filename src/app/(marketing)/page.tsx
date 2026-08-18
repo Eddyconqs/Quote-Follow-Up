@@ -103,8 +103,16 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <footer className="container flex flex-col items-center justify-between gap-2 py-8 text-sm text-muted-foreground sm:flex-row">
+      <footer className="container flex flex-col items-center justify-between gap-3 py-8 text-sm text-muted-foreground sm:flex-row">
         <span>{dict.common.appName}</span>
+        <div className="flex items-center gap-4">
+          <Link href="/privacy" className="hover:underline">
+            {locale === "fr" ? "Confidentialité" : "Privacy"}
+          </Link>
+          <Link href="/terms" className="hover:underline">
+            {locale === "fr" ? "Conditions" : "Terms"}
+          </Link>
+        </div>
         <span>
           © {new Date().getFullYear()} {dict.common.appName}. {dict.landing.footerRights}
         </span>
