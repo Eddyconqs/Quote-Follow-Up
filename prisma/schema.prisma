@@ -178,6 +178,8 @@ model User {
   role                Role     @default(OWNER)
   companyId           String
   preferredLanguage   Language @default(FR)
+  failedLoginAttempts Int      @default(0)
+  lockedUntil         DateTime?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

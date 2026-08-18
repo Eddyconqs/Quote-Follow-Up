@@ -72,8 +72,20 @@ export const en: Dictionary = {
     forgotPassword: "Forgot your password?",
     forgotPasswordNote:
       "Email password reset is coming soon. Contact support for assistance.",
+    forgotPasswordTitle: "Forgot password",
+    forgotPasswordButton: "Send reset link",
+    forgotPasswordSent: "If an account exists with that email, a reset link has been sent.",
+    resetPasswordTitle: "Reset password",
+    resetPasswordButton: "Reset password",
+    resetInvalidToken: "This reset link is invalid or has expired. Request a new one.",
+    resetPasswordSuccess: "Password reset. You can now log in.",
+    newPassword: "New password",
+    resetEmailSubject: "Reset your TrackQuo password",
+    resetEmailBody:
+      "Hi {{name}}, click the following link to reset your TrackQuo password: {{resetUrl}}\n\nThis link expires in 1 hour. If you didn't request this reset, you can ignore this email.",
     invalidCredentials: "Invalid email or password.",
     emailInUse: "An account already exists with this email.",
+    accountLocked: "Too many failed attempts. Try again in {{minutes}} minute(s).",
   },
   onboarding: {
     title: "Set up your company",

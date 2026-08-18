@@ -71,8 +71,20 @@ export const fr = {
     forgotPassword: "Mot de passe oublié?",
     forgotPasswordNote:
       "La réinitialisation de mot de passe par courriel arrive bientôt. Contactez le support pour assistance.",
+    forgotPasswordTitle: "Mot de passe oublié",
+    forgotPasswordButton: "Envoyer le lien de réinitialisation",
+    forgotPasswordSent: "Si un compte existe avec ce courriel, un lien de réinitialisation a été envoyé.",
+    resetPasswordTitle: "Réinitialiser le mot de passe",
+    resetPasswordButton: "Réinitialiser le mot de passe",
+    resetInvalidToken: "Ce lien de réinitialisation est invalide ou expiré. Demandez-en un nouveau.",
+    resetPasswordSuccess: "Mot de passe réinitialisé. Vous pouvez maintenant vous connecter.",
+    newPassword: "Nouveau mot de passe",
+    resetEmailSubject: "Réinitialisation de votre mot de passe TrackQuo",
+    resetEmailBody:
+      "Bonjour {{name}}, cliquez sur le lien suivant pour réinitialiser votre mot de passe TrackQuo : {{resetUrl}}\n\nCe lien expire dans 1 heure. Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer ce courriel.",
     invalidCredentials: "Courriel ou mot de passe invalide.",
     emailInUse: "Un compte existe déjà avec ce courriel.",
+    accountLocked: "Trop de tentatives échouées. Réessayez dans {{minutes}} minute(s).",
   },
   onboarding: {
     title: "Configurez votre entreprise",

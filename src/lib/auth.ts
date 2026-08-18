@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
@@ -7,6 +8,7 @@ import type { Role } from "@prisma/client";
 
 const SESSION_COOKIE = "qfu_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const RESET_TOKEN_DURATION_SECONDS = 60 * 60; // 1 hour
 
 function getSecretKey() {
   const secret = process.env.AUTH_SECRET;
@@ -94,4 +96,36 @@ export async function requireCurrentUser() {
     throw new Error("UNAUTHENTICATED");
   }
   return user;
+}
+
+/** Stable fingerprint of a password hash, used to auto-invalidate reset tokens once the password has changed. */
+function passwordFingerprint(passwordHash: string): string {
+  return createHash("sha256").update(passwordHash).digest("hex").slice(0, 16);
+}
+
+/**
+ * Stateless password-reset token: a short-lived signed JWT, no database table needed.
+ * Embeds a fingerprint of the current password hash so the token stops verifying the
+ * moment it's used (or the password changes any other way), preventing replay.
+ */
+export async function createPasswordResetToken(userId: string, currentPasswordHash: string): Promise<string> {
+  return new SignJWT({ userId, purpose: "password-reset", fp: passwordFingerprint(currentPasswordHash) })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${RESET_TOKEN_DURATION_SECONDS}s`)
+    .sign(getSecretKey());
+}
+
+export async function verifyPasswordResetToken(token: string): Promise<{ userId: string } | null> {
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey());
+    if (payload.purpose !== "password-reset" || typeof payload.userId !== "string") return null;
+
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    if (!user || passwordFingerprint(user.passwordHash) !== payload.fp) return null;
+
+    return { userId: user.id };
+  } catch {
+    return null;
+  }
 }
