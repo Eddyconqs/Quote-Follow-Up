@@ -1,0 +1,419 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------
+// Enums
+// ------------------------------
+
+enum Role {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+enum Language {
+  FR
+  EN
+}
+
+enum Currency {
+  CAD
+  USD
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  FOLLOW_UP_SCHEDULED
+  CUSTOMER_REPLIED
+  WON
+  LOST
+  PAUSED
+  EXPIRED
+  POSTPONED
+}
+
+enum FollowUpStatus {
+  NONE
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum LostReason {
+  TOO_EXPENSIVE
+  CHOSE_ANOTHER_COMPANY
+  NO_RESPONSE
+  PROJECT_POSTPONED
+  PROJECT_CANCELLED
+  COULD_NOT_REACH_CUSTOMER
+  OTHER
+}
+
+enum QuoteSource {
+  MANUAL
+  IMPORTED
+  CRM_INTEGRATION
+  WEBSITE_FORM
+  PHONE_CALL
+  EMAIL
+  OTHER
+}
+
+enum Channel {
+  EMAIL
+  SMS
+  MANUAL_TASK
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum MessageDirection {
+  OUTBOUND
+  INBOUND
+}
+
+enum MessageStatus {
+  DRAFT
+  PENDING_APPROVAL
+  SCHEDULED
+  SENT
+  DELIVERED
+  FAILED
+  REPLIED
+  CANCELLED
+}
+
+enum ReplyClassification {
+  INTERESTED
+  QUESTION
+  PRICE_OBJECTION
+  WANTS_TO_SCHEDULE
+  NOT_NOW
+  DECLINED
+  UNCLEAR
+}
+
+enum JobHandoffStatus {
+  NOT_STARTED
+  READY_FOR_SCHEDULING
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum ActivityType {
+  QUOTE_CREATED
+  QUOTE_EDITED
+  QUOTE_SENT
+  FOLLOW_UP_ACTIVATED
+  FOLLOW_UP_PAUSED
+  FOLLOW_UP_RESUMED
+  FOLLOW_UP_CANCELLED
+  MESSAGE_SCHEDULED
+  MESSAGE_SENT
+  MESSAGE_FAILED
+  CUSTOMER_REPLIED
+  QUOTE_WON
+  QUOTE_LOST
+  QUOTE_POSTPONED
+  QUOTE_EXPIRED
+  JOB_HANDOFF_CREATED
+  JOB_HANDOFF_UPDATED
+}
+
+// ------------------------------
+// Models
+// ------------------------------
+
+model Company {
+  id              String   @id @default(cuid())
+  name            String
+  businessType    String?
+  email           String?
+  phone           String?
+  address         String?
+  defaultLanguage Language @default(FR)
+  defaultCurrency Currency @default(CAD)
+  timeZone        String   @default("America/Toronto")
+  businessHours   Json     @default("{\"start\":9,\"end\":17,\"days\":[1,2,3,4,5]}")
+  approvalMode    Boolean  @default(false)
+  isDemo          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users               User[]
+  customers           Customer[]
+  quotes              Quote[]
+  followUpSequences   FollowUpSequence[]
+  followUpEnrollments FollowUpEnrollment[]
+  messages            Message[]
+  customerReplies     CustomerReply[]
+  jobHandoffs         JobHandoff[]
+  activities          Activity[]
+
+  @@map("companies")
+}
+
+model User {
+  id                  String   @id @default(cuid())
+  name                String
+  email               String   @unique
+  passwordHash        String
+  role                Role     @default(OWNER)
+  companyId           String
+  preferredLanguage   Language @default(FR)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignedQuotes    Quote[]            @relation("AssignedUser")
+  activities        Activity[]
+  jobHandoffs       JobHandoff[]       @relation("AssignedTeamMember")
+
+  @@index([companyId])
+  @@map("users")
+}
+
+model Customer {
+  id                String   @id @default(cuid())
+  companyId         String
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  preferredLanguage Language @default(FR)
+  address           String?
+  notes             String?
+  emailConsent      Boolean  @default(false)
+  smsConsent        Boolean  @default(false)
+  deletedAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quotes          Quote[]
+  messages        Message[]
+  customerReplies CustomerReply[]
+  jobHandoffs     JobHandoff[]
+
+  @@index([companyId])
+  @@map("customers")
+}
+
+model Quote {
+  id             String       @id @default(cuid())
+  companyId      String
+  customerId     String
+  quoteNumber    String
+  title          String
+  description    String?
+  serviceType    String
+  amount         Decimal      @db.Decimal(12, 2)
+  currency       Currency     @default(CAD)
+  language       Language     @default(FR)
+  quoteDate      DateTime     @default(now())
+  expirationDate DateTime?
+  status         QuoteStatus  @default(DRAFT)
+  followUpStatus FollowUpStatus @default(NONE)
+  nextFollowUpAt DateTime?
+  source         QuoteSource  @default(MANUAL)
+  assignedUserId String?
+  notes          String?
+  lostReason     LostReason?
+  wonAt          DateTime?
+  lostAt         DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  company             Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer            Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignedUser        User?                @relation("AssignedUser", fields: [assignedUserId], references: [id])
+  followUpEnrollments FollowUpEnrollment[]
+  messages            Message[]
+  customerReplies     CustomerReply[]
+  jobHandoffs         JobHandoff[]
+  activities          Activity[]
+
+  @@unique([companyId, quoteNumber])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, nextFollowUpAt])
+  @@map("quotes")
+}
+
+model FollowUpSequence {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  language  Language @default(FR)
+  active    Boolean  @default(true)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company     Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  steps       FollowUpStep[]
+  enrollments FollowUpEnrollment[]
+
+  @@index([companyId])
+  @@map("follow_up_sequences")
+}
+
+model FollowUpStep {
+  id               String   @id @default(cuid())
+  sequenceId       String
+  stepNumber       Int
+  delayInDays      Int
+  channel          Channel  @default(EMAIL)
+  subject          String?
+  message          String
+  requiresApproval Boolean  @default(false)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  sequence FollowUpSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([sequenceId, stepNumber])
+  @@map("follow_up_steps")
+}
+
+model FollowUpEnrollment {
+  id           String           @id @default(cuid())
+  companyId    String
+  quoteId      String
+  sequenceId   String
+  status       EnrollmentStatus @default(ACTIVE)
+  currentStep  Int              @default(0)
+  nextRunAt    DateTime?
+  startedAt    DateTime         @default(now())
+  pausedAt     DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quote    Quote            @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  sequence FollowUpSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([status, nextRunAt])
+  @@map("follow_up_enrollments")
+}
+
+model Message {
+  id               String            @id @default(cuid())
+  companyId        String
+  quoteId          String
+  customerId       String
+  followUpStepId   String?
+  channel          Channel           @default(EMAIL)
+  direction        MessageDirection  @default(OUTBOUND)
+  status           MessageStatus     @default(SCHEDULED)
+  subject          String?
+  body             String
+  providerMessageId String?
+  aiAssisted       Boolean           @default(false)
+  scheduledAt      DateTime?
+  sentAt           DateTime?
+  deliveredAt      DateTime?
+  repliedAt        DateTime?
+  failureReason    String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  company        Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quote          Quote            @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  customer       Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  followUpStep   FollowUpStep?    @relation(fields: [followUpStepId], references: [id])
+  customerReply  CustomerReply?
+
+  @@index([companyId])
+  @@index([quoteId])
+  @@index([companyId, status])
+  @@map("messages")
+}
+
+model CustomerReply {
+  id                    String                @id @default(cuid())
+  companyId             String
+  quoteId               String
+  customerId            String
+  messageId             String                @unique
+  body                  String
+  classification        ReplyClassification?
+  confidence            Float?
+  requiresHumanAttention Boolean              @default(true)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quote    Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  message  Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([companyId, requiresHumanAttention])
+  @@map("customer_replies")
+}
+
+model JobHandoff {
+  id             String           @id @default(cuid())
+  companyId      String
+  quoteId        String
+  customerId     String
+  status         JobHandoffStatus @default(NOT_STARTED)
+  serviceType    String?
+  notes          String?
+  scheduledDate  DateTime?
+  assignedUserId String?
+  externalSystem String?
+  externalId     String?
+  syncStatus     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quote        Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignedUser User?    @relation("AssignedTeamMember", fields: [assignedUserId], references: [id])
+
+  @@index([companyId])
+  @@map("job_handoffs")
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  companyId   String
+  quoteId     String?
+  userId      String?
+  type        ActivityType
+  description String
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([quoteId])
+  @@map("activities")
+}
