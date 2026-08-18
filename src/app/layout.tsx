@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "QuoteFollowUp — Ne laissez plus vos soumissions sans suivi",
+  title: "TrackQuo — Ne laissez plus vos soumissions sans suivi",
   description:
     "Suivi automatique des soumissions et récupération de revenu pour les entreprises de services du Québec.",
 };

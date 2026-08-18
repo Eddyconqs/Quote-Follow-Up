@@ -2,7 +2,7 @@ import type { Dictionary } from "@/lib/i18n";
 
 export const en: Dictionary = {
   common: {
-    appName: "QuoteFollowUp",
+    appName: "TrackQuo",
     tagline: "Never let a quote go cold.",
     save: "Save",
     cancel: "Cancel",
@@ -53,7 +53,7 @@ export const en: Dictionary = {
     step3: "Get alerted when a customer replies or needs attention",
     socialProofTitle: "Built for Quebec service businesses",
     socialProofBody:
-      "QuoteFollowUp is in active development with residential and commercial service businesses.",
+      "TrackQuo is in active development with residential and commercial service businesses.",
     footerRights: "All rights reserved.",
     notReplace: "Works alongside your existing CRM and accounting tools — it doesn't replace them.",
   },

@@ -1,7 +1,7 @@
 /** No `as const`: keeps leaf types as `string` so `en` can satisfy the same `Dictionary` shape with different values. */
 export const fr = {
   common: {
-    appName: "QuoteFollowUp",
+    appName: "TrackQuo",
     tagline: "Ne laissez plus vos soumissions sans suivi.",
     save: "Enregistrer",
     cancel: "Annuler",
@@ -52,7 +52,7 @@ export const fr = {
     step3: "Recevez une alerte quand un client répond ou qu'une action est requise",
     socialProofTitle: "Conçu pour les entreprises de services du Québec",
     socialProofBody:
-      "QuoteFollowUp est en développement actif auprès d'entreprises de services résidentiels et commerciaux.",
+      "TrackQuo est en développement actif auprès d'entreprises de services résidentiels et commerciaux.",
     footerRights: "Tous droits réservés.",
     notReplace: "Fonctionne avec vos outils actuels de CRM et de comptabilité — ne les remplace pas.",
   },
