@@ -3,6 +3,7 @@ import { ArrowRight, Mail, MessageCircleQuestion, TrendingUp, CheckCircle2 } fro
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { getDictionary } from "@/lib/i18n";
+import { ProductShowcase } from "./product-showcase";
 
 export default async function LandingPage() {
   const { locale, dict } = await getDictionary();
@@ -46,11 +47,15 @@ export default async function LandingPage() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/login">{dict.landing.ctaSecondary}</Link>
+              <Link href="#demo">{dict.landing.ctaSecondary}</Link>
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">{dict.landing.notReplace}</p>
         </div>
+      </section>
+
+      <section className="container py-16">
+        <ProductShowcase dict={dict} />
       </section>
 
       <section className="container py-20">
