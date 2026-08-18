@@ -23,7 +23,7 @@ export function ProductShowcase({ dict }: { dict: Dictionary }) {
   const activeShot = SHOTS.find((s) => s.key === active)!;
 
   return (
-    <div id="demo" className="scroll-mt-20">
+    <div>
       <div className="mb-6 flex justify-center gap-2">
         {tabs.map((tab) => (
           <button
