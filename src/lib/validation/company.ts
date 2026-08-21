@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalEmailSchema, optionalPhoneSchema, BUSINESS_TYPES, IANA_TIME_ZONES } from "@/lib/validation/shared";
+import { emailSchema, optionalEmailSchema, optionalPhoneSchema, BUSINESS_TYPES, IANA_TIME_ZONES } from "@/lib/validation/shared";
 
 export const businessHoursSchema = z.object({
   start: z.number().int().min(0).max(23),
@@ -12,7 +12,9 @@ export const onboardingSchema = z
     name: z.string().trim().min(2).max(160),
     businessType: z.enum(BUSINESS_TYPES),
     defaultLanguage: z.enum(["FR", "EN"]),
-    email: optionalEmailSchema,
+    // Required: CASL sender identification (business name + contact address) must
+    // exist before this tenant can send any email — see src/lib/compliance/sender-identity.ts.
+    email: emailSchema,
     phone: optionalPhoneSchema,
     timeZone: z.enum(IANA_TIME_ZONES),
     defaultCurrency: z.enum(["CAD", "USD"]),
@@ -25,7 +27,8 @@ export const companyProfileSchema = z
   .object({
     name: z.string().trim().min(2).max(160),
     businessType: z.enum(BUSINESS_TYPES),
-    email: optionalEmailSchema,
+    // Required — see comment on onboardingSchema.email above.
+    email: emailSchema,
     phone: optionalPhoneSchema,
     address: z.string().trim().max(300).optional().transform((v) => (v ? v : undefined)),
     defaultLanguage: z.enum(["FR", "EN"]),
@@ -33,6 +36,8 @@ export const companyProfileSchema = z
     timeZone: z.enum(IANA_TIME_ZONES),
     businessHours: businessHoursSchema,
     approvalMode: z.boolean(),
+    privacyOfficerName: z.string().trim().max(160).optional().transform((v) => (v ? v : undefined)),
+    privacyOfficerEmail: optionalEmailSchema,
   })
   .strict();
 

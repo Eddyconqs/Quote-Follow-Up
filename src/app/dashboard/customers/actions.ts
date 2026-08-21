@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/auth";
-import { customerSchema } from "@/lib/validation/customer";
+import { customerSchema, type CustomerInput } from "@/lib/validation/customer";
+import { recordConsent } from "@/lib/compliance/consent";
 import type { Customer } from "@prisma/client";
 
 export type CustomerFormState = { error?: string; customer?: Customer };
@@ -23,6 +24,27 @@ function parseCustomerFormData(formData: FormData) {
   });
 }
 
+/**
+ * Creates a customer and, for each channel the tenant checked consent for, appends the
+ * matching immutable ConsentRecord in the same transaction — a customer can never end
+ * up with a consent boolean set without a consent-origin record behind it.
+ */
+async function createCustomerWithConsent(companyId: string, data: CustomerInput): Promise<Customer> {
+  return prisma.$transaction(async (tx) => {
+    const now = new Date();
+    const customer = await tx.customer.create({ data: { ...data, companyId, lastInteractionAt: now } });
+
+    if (data.emailConsent) {
+      await recordConsent(tx, { companyId, customerId: customer.id, channel: "EMAIL", source: "QUOTE_REQUEST", consentedAt: now });
+    }
+    if (data.smsConsent) {
+      await recordConsent(tx, { companyId, customerId: customer.id, channel: "SMS", source: "QUOTE_REQUEST", consentedAt: now });
+    }
+
+    return customer;
+  });
+}
+
 /** Used directly by the standalone "new customer" page (redirects on success). */
 export async function createCustomerAction(_prev: CustomerFormState, formData: FormData): Promise<CustomerFormState> {
   const user = await requireCurrentUser();
@@ -31,7 +53,7 @@ export async function createCustomerAction(_prev: CustomerFormState, formData: F
     return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide." };
   }
 
-  await prisma.customer.create({ data: { ...parsed.data, companyId: user.companyId } });
+  await createCustomerWithConsent(user.companyId, parsed.data);
 
   revalidatePath("/dashboard/customers");
   redirect("/dashboard/customers");
@@ -45,7 +67,7 @@ export async function createCustomerInlineAction(_prev: CustomerFormState, formD
     return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide." };
   }
 
-  const customer = await prisma.customer.create({ data: { ...parsed.data, companyId: user.companyId } });
+  const customer = await createCustomerWithConsent(user.companyId, parsed.data);
   revalidatePath("/dashboard/customers");
   return { customer };
 }

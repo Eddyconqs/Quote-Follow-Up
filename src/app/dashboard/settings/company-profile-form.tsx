@@ -73,7 +73,7 @@ export function CompanyProfileForm({ dict, company, locale }: { dict: Dictionary
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="email">{dict.onboarding.email}</Label>
-          <Input id="email" name="email" type="email" defaultValue={company.email ?? ""} maxLength={200} />
+          <Input id="email" name="email" type="email" required defaultValue={company.email ?? ""} maxLength={200} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="phone">{dict.onboarding.phone}</Label>
@@ -157,6 +157,21 @@ export function CompanyProfileForm({ dict, company, locale }: { dict: Dictionary
                 </button>
               );
             })}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2 rounded-md border border-border p-3">
+        <p className="text-sm font-medium">{dict.settings.privacyOfficerSection}</p>
+        <p className="text-xs text-muted-foreground">{dict.settings.privacyOfficerDesc}</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="privacyOfficerName">{dict.settings.privacyOfficerName}</Label>
+            <Input id="privacyOfficerName" name="privacyOfficerName" defaultValue={company.privacyOfficerName ?? ""} maxLength={160} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="privacyOfficerEmail">{dict.settings.privacyOfficerEmail}</Label>
+            <Input id="privacyOfficerEmail" name="privacyOfficerEmail" type="email" defaultValue={company.privacyOfficerEmail ?? ""} maxLength={200} />
           </div>
         </div>
       </div>

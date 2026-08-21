@@ -32,6 +32,8 @@ export async function updateCompanyProfileAction(_prev: SettingsActionState, for
       days: formData.getAll("businessHoursDays").map(Number),
     },
     approvalMode: formData.get("approvalMode") === "on",
+    privacyOfficerName: formData.get("privacyOfficerName") ?? "",
+    privacyOfficerEmail: formData.get("privacyOfficerEmail") ?? "",
   });
 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide." };

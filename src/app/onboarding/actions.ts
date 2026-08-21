@@ -28,7 +28,15 @@ export async function completeOnboardingAction(_prev: OnboardingFormState, formD
 
   await prisma.company.update({
     where: { id: user.companyId },
-    data: { ...parsed.data, businessHours: DEFAULT_BUSINESS_HOURS as unknown as Prisma.InputJsonValue },
+    data: {
+      ...parsed.data,
+      businessHours: DEFAULT_BUSINESS_HOURS as unknown as Prisma.InputJsonValue,
+      // Sensible placeholder for the Loi 25 "responsable de la protection des
+      // renseignements personnels" contact: the signing owner, until the tenant
+      // designates someone else in Settings.
+      privacyOfficerName: user.name,
+      privacyOfficerEmail: parsed.data.email,
+    },
   });
 
   redirect("/dashboard");

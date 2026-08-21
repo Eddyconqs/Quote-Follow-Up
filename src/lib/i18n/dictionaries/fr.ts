@@ -195,6 +195,11 @@ export const fr = {
     delayInDays: "Délai (jours)",
     requiresApproval: "Nécessite une approbation",
     saved: "Modifications enregistrées.",
+    privacyOfficerSection: "Responsable de la protection des renseignements personnels",
+    privacyOfficerDesc:
+      "En vertu de la Loi 25 du Québec, toute organisation qui traite des renseignements personnels doit désigner un responsable. Par défaut, c'est vous, jusqu'à ce que vous désigniez quelqu'un d'autre.",
+    privacyOfficerName: "Nom du responsable",
+    privacyOfficerEmail: "Courriel du responsable",
   },
   customers: {
     title: "Clients",
@@ -208,6 +213,8 @@ export const fr = {
     notes: "Notes",
     emailConsent: "Consentement courriel",
     smsConsent: "Consentement SMS",
+    consentDesc:
+      "Ceci enregistre un consentement implicite basé sur votre relation d'affaires (ex. : une demande de soumission). Il expire automatiquement après environ 2 ans sans nouvelle interaction, conformément à la loi anti-pourriel du Canada.",
     empty: "Aucun client trouvé.",
     error: "Une erreur est survenue lors du chargement des clients.",
     createSuccess: "Client créé.",
@@ -257,7 +264,9 @@ export const fr = {
     MESSAGE_SCHEDULED: "Message planifié",
     MESSAGE_SENT: "Message envoyé",
     MESSAGE_FAILED: "Échec de l'envoi du message",
+    MESSAGE_BLOCKED_COMPLIANCE: "Message bloqué par les règles de conformité",
     CUSTOMER_REPLIED: "Le client a répondu",
+    CUSTOMER_UNSUBSCRIBED: "Le client s'est désabonné",
     QUOTE_WON: "Soumission gagnée",
     QUOTE_LOST: "Soumission perdue",
     QUOTE_POSTPONED: "Soumission reportée",
@@ -345,5 +354,15 @@ export const fr = {
     PRICE_OBJECTION: "Objection sur le prix",
     EXPIRES_SOON: "Expire bientôt",
     OPEN_TOO_LONG: "Ouverte depuis plus de 14 jours",
+  },
+  unsubscribe: {
+    title: "Se désabonner",
+    emailDesc: "Confirmez que vous ne souhaitez plus recevoir de courriels de la part de {{companyName}}.",
+    smsDesc: "Confirmez que vous ne souhaitez plus recevoir de messages texte de la part de {{companyName}}.",
+    confirm: "Confirmer le désabonnement",
+    doneTitle: "Vous êtes désabonné",
+    doneDesc: "Vous ne recevrez plus de messages de ce type de notre part.",
+    alreadyDone: "Ce contact est déjà désabonné.",
+    invalidLink: "Ce lien de désabonnement n'est pas valide.",
   },
 };

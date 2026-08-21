@@ -52,6 +52,7 @@ export async function createQuoteAction(_prev: QuoteFormState, formData: FormDat
       type: "QUOTE_CREATED",
       description: `Quote "${created.title}" created.`,
     });
+    await tx.customer.update({ where: { id: created.customerId }, data: { lastInteractionAt: new Date() } });
     return created;
   });
 

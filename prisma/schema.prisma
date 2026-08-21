@@ -128,13 +128,28 @@ enum ActivityType {
   MESSAGE_SCHEDULED
   MESSAGE_SENT
   MESSAGE_FAILED
+  MESSAGE_BLOCKED_COMPLIANCE
   CUSTOMER_REPLIED
+  CUSTOMER_UNSUBSCRIBED
   QUOTE_WON
   QUOTE_LOST
   QUOTE_POSTPONED
   QUOTE_EXPIRED
   JOB_HANDOFF_CREATED
   JOB_HANDOFF_UPDATED
+}
+
+enum ConsentSource {
+  QUOTE_REQUEST
+  EXISTING_BUSINESS_RELATIONSHIP
+  EXPRESS_OPT_IN
+  IMPORTED
+}
+
+enum UnsubscribeSource {
+  LINK_CLICK
+  MANUAL_STAFF_ENTRY
+  API
 }
 
 // ------------------------------
@@ -154,6 +169,8 @@ model Company {
   businessHours   Json     @default("{\"start\":9,\"end\":17,\"days\":[1,2,3,4,5]}")
   approvalMode    Boolean  @default(false)
   isDemo          Boolean  @default(false)
+  privacyOfficerName  String?
+  privacyOfficerEmail String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -166,6 +183,9 @@ model Company {
   customerReplies     CustomerReply[]
   jobHandoffs         JobHandoff[]
   activities          Activity[]
+  consentRecords      ConsentRecord[]
+  unsubscribeEvents   UnsubscribeEvent[]
+  privacyIncidents    PrivacyIncident[]
 
   @@map("companies")
 }
@@ -204,15 +224,19 @@ model Customer {
   notes             String?
   emailConsent      Boolean  @default(false)
   smsConsent        Boolean  @default(false)
+  unsubscribeToken  String   @unique @default(dbgenerated("gen_random_uuid()::text"))
+  lastInteractionAt DateTime?
   deletedAt         DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  quotes          Quote[]
-  messages        Message[]
-  customerReplies CustomerReply[]
-  jobHandoffs     JobHandoff[]
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quotes            Quote[]
+  messages          Message[]
+  customerReplies   CustomerReply[]
+  jobHandoffs       JobHandoff[]
+  consentRecords    ConsentRecord[]
+  unsubscribeEvents UnsubscribeEvent[]
 
   @@index([companyId])
   @@map("customers")
@@ -418,4 +442,58 @@ model Activity {
   @@index([companyId])
   @@index([quoteId])
   @@map("activities")
+}
+
+// ------------------------------
+// Compliance (CASL / Loi 25) — append-only. No code path may ever update or
+// delete rows in these three models; they are the durable record of consent,
+// unsubscribe, and privacy-incident events.
+// ------------------------------
+
+model ConsentRecord {
+  id               String        @id @default(cuid())
+  companyId        String
+  customerId       String
+  channel          Channel
+  source           ConsentSource
+  consentedAt      DateTime
+  recordedByUserId String?
+  createdAt        DateTime      @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, customerId, channel])
+  @@map("consent_records")
+}
+
+model UnsubscribeEvent {
+  id           String            @id @default(cuid())
+  companyId    String
+  customerId   String
+  channel      Channel
+  contactValue String
+  source       UnsubscribeSource
+  createdAt    DateTime          @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, channel, contactValue])
+  @@map("unsubscribe_events")
+}
+
+model PrivacyIncident {
+  id                 String   @id @default(cuid())
+  companyId          String
+  category           String
+  description        String
+  affectedCustomerId String?
+  metadata           Json?
+  createdAt          DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("privacy_incidents")
 }

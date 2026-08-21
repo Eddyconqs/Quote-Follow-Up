@@ -52,14 +52,22 @@ export async function resumeFollowUpAction(enrollmentId: string, quoteId: string
 
 export async function approveMessageAction(messageId: string, quoteId: string): Promise<ActionState> {
   const user = await requireCurrentUser();
-  await approveAndSendMessage(messageId, user.companyId, user.id);
+  try {
+    await approveAndSendMessage(messageId, user.companyId, user.id);
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : "SEND_FAILED");
+  }
   revalidatePath(`/dashboard/quotes/${quoteId}`);
   return OK;
 }
 
 export async function retryMessageAction(messageId: string, quoteId: string): Promise<ActionState> {
   const user = await requireCurrentUser();
-  await retryMessage(messageId, user.companyId, user.id);
+  try {
+    await retryMessage(messageId, user.companyId, user.id);
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : "SEND_FAILED");
+  }
   revalidatePath(`/dashboard/quotes/${quoteId}`);
   return OK;
 }

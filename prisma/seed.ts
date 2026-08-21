@@ -39,6 +39,8 @@ async function main() {
       businessHours: { start: 8, end: 17, days: [1, 2, 3, 4, 5] },
       approvalMode: false,
       isDemo: true,
+      privacyOfficerName: "Marc-André Lavoie",
+      privacyOfficerEmail: "info@cvclavoie.example",
     },
   });
 
@@ -145,6 +147,7 @@ async function main() {
         address: "22 Rue des Érables, Longueuil, QC",
         emailConsent: true,
         smsConsent: true,
+        lastInteractionAt: daysAgo(1),
       },
     }),
     prisma.customer.create({
@@ -157,6 +160,7 @@ async function main() {
         preferredLanguage: "FR",
         emailConsent: true,
         smsConsent: false,
+        lastInteractionAt: daysAgo(2),
       },
     }),
     prisma.customer.create({
@@ -169,6 +173,7 @@ async function main() {
         preferredLanguage: "EN",
         emailConsent: true,
         smsConsent: true,
+        lastInteractionAt: daysAgo(1),
       },
     }),
     prisma.customer.create({
@@ -180,6 +185,7 @@ async function main() {
         preferredLanguage: "FR",
         emailConsent: false,
         smsConsent: false,
+        lastInteractionAt: daysAgo(5),
       },
     }),
     prisma.customer.create({
@@ -192,9 +198,32 @@ async function main() {
         preferredLanguage: "EN",
         emailConsent: true,
         smsConsent: true,
+        lastInteractionAt: daysAgo(1),
       },
     }),
   ]);
+
+  // Every seeded consent boolean needs a matching immutable ConsentRecord, or the
+  // compliance send gate will block every demo follow-up.
+  const consentedCustomers: Array<{ id: string; emailConsent: boolean; smsConsent: boolean; createdAt: Date }> = [
+    sophie,
+    jeanPhilippe,
+    ling,
+    marc,
+    amanda,
+  ];
+  for (const c of consentedCustomers) {
+    if (c.emailConsent) {
+      await prisma.consentRecord.create({
+        data: { companyId: company.id, customerId: c.id, channel: "EMAIL", source: "QUOTE_REQUEST", consentedAt: c.createdAt },
+      });
+    }
+    if (c.smsConsent) {
+      await prisma.consentRecord.create({
+        data: { companyId: company.id, customerId: c.id, channel: "SMS", source: "QUOTE_REQUEST", consentedAt: c.createdAt },
+      });
+    }
+  }
 
   let quoteCounter = 1;
   function nextQuoteNumber() {

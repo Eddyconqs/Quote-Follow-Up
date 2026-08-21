@@ -196,6 +196,11 @@ export const en: Dictionary = {
     delayInDays: "Delay (days)",
     requiresApproval: "Requires approval",
     saved: "Changes saved.",
+    privacyOfficerSection: "Privacy contact",
+    privacyOfficerDesc:
+      "Under Quebec's Law 25, every organization handling personal data must designate a privacy officer. Defaults to you until you name someone else.",
+    privacyOfficerName: "Privacy officer name",
+    privacyOfficerEmail: "Privacy officer email",
   },
   customers: {
     title: "Customers",
@@ -209,6 +214,8 @@ export const en: Dictionary = {
     notes: "Notes",
     emailConsent: "Email consent",
     smsConsent: "SMS consent",
+    consentDesc:
+      "Records this as implied consent based on your business relationship (e.g. a quote request). It expires automatically after about 2 years without further interaction, per Canada's anti-spam law.",
     empty: "No customers found.",
     error: "An error occurred while loading customers.",
     createSuccess: "Customer created.",
@@ -258,7 +265,9 @@ export const en: Dictionary = {
     MESSAGE_SCHEDULED: "Message scheduled",
     MESSAGE_SENT: "Message sent",
     MESSAGE_FAILED: "Message failed to send",
+    MESSAGE_BLOCKED_COMPLIANCE: "Message blocked by compliance rules",
     CUSTOMER_REPLIED: "Customer replied",
+    CUSTOMER_UNSUBSCRIBED: "Customer unsubscribed",
     QUOTE_WON: "Quote won",
     QUOTE_LOST: "Quote lost",
     QUOTE_POSTPONED: "Quote postponed",
@@ -346,5 +355,15 @@ export const en: Dictionary = {
     PRICE_OBJECTION: "Price objection raised",
     EXPIRES_SOON: "Expires soon",
     OPEN_TOO_LONG: "Open for more than 14 days",
+  },
+  unsubscribe: {
+    title: "Unsubscribe",
+    emailDesc: "Confirm you no longer want to receive emails from {{companyName}}.",
+    smsDesc: "Confirm you no longer want to receive text messages from {{companyName}}.",
+    confirm: "Confirm unsubscribe",
+    doneTitle: "You're unsubscribed",
+    doneDesc: "You won't receive this type of message from us again.",
+    alreadyDone: "This contact is already unsubscribed.",
+    invalidLink: "This unsubscribe link isn't valid.",
   },
 };

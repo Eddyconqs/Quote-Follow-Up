@@ -49,7 +49,7 @@ export function OnboardingForm({ dict, companyName, defaultLanguage }: { dict: D
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="email">{dict.onboarding.email}</Label>
-          <Input id="email" name="email" type="email" maxLength={200} />
+          <Input id="email" name="email" type="email" required maxLength={200} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="phone">{dict.onboarding.phone}</Label>

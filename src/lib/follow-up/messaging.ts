@@ -4,6 +4,8 @@ import { logActivity } from "@/lib/activity";
 import { sendViaChannel } from "@/lib/providers/dispatch";
 import { getAiProvider } from "@/lib/providers/ai";
 import { cancelActiveEnrollmentsForQuote } from "@/lib/follow-up/engine";
+import { assertSendAllowed } from "@/lib/compliance/send-gate";
+import { buildUnsubscribeUrl, appendUnsubscribeFooter } from "@/lib/compliance/unsubscribe-link";
 
 export async function sendManualMessage(
   input: { quoteId: string; channel: "EMAIL" | "SMS" | "MANUAL_TASK"; subject?: string; body: string },
@@ -31,10 +33,20 @@ export async function sendManualMessage(
       return message;
     }
 
-    const hasConsent = input.channel === "EMAIL" ? quote.customer.emailConsent && !!quote.customer.email : quote.customer.smsConsent && !!quote.customer.phone;
-    if (!hasConsent) {
-      throw new Error("MISSING_CONSENT");
+    const gateResult = await assertSendAllowed(tx, { company: quote.company, customer: quote.customer, companyId, channel: input.channel });
+    if (!gateResult.allowed) {
+      await logActivity(tx, {
+        companyId,
+        quoteId: quote.id,
+        userId,
+        type: "MESSAGE_BLOCKED_COMPLIANCE",
+        description: `Manual message blocked by compliance gate (${gateResult.reason}).`,
+        metadata: { channel: input.channel, reason: gateResult.reason },
+      });
+      throw new Error(`COMPLIANCE_BLOCKED_${gateResult.reason}`);
     }
+
+    const body = input.channel === "EMAIL" ? appendUnsubscribeFooter(input.body, buildUnsubscribeUrl(quote.customer, "EMAIL"), quote.language) : input.body;
 
     const message = await tx.message.create({
       data: {
@@ -45,7 +57,7 @@ export async function sendManualMessage(
         direction: "OUTBOUND",
         status: "SCHEDULED",
         subject: input.subject,
-        body: input.body,
+        body,
       },
     });
 
@@ -53,7 +65,7 @@ export async function sendManualMessage(
     const sendResult = await sendViaChannel(channel, {
       to: channel === "EMAIL" ? quote.customer.email! : quote.customer.phone!,
       subject: input.subject ?? "",
-      body: input.body,
+      body,
       language: quote.language,
     });
 
@@ -111,6 +123,8 @@ export async function recordCustomerReply(
     if (original) {
       await tx.message.update({ where: { id: original.id }, data: { status: "REPLIED", repliedAt: new Date() } });
     }
+
+    await tx.customer.update({ where: { id: quote.customerId }, data: { lastInteractionAt: new Date() } });
 
     const ai = getAiProvider();
     const classification = await ai.classifyReply(input.body, quote.customer.preferredLanguage);

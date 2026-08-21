@@ -6,6 +6,8 @@ import { renderTemplate } from "@/lib/templates";
 import { formatCurrency } from "@/lib/utils";
 import { computeStepSendTime, parseBusinessHours } from "@/lib/follow-up/business-hours";
 import { sendViaChannel } from "@/lib/providers/dispatch";
+import { assertSendAllowed } from "@/lib/compliance/send-gate";
+import { buildUnsubscribeUrl, appendUnsubscribeFooter } from "@/lib/compliance/unsubscribe-link";
 
 type TxClient = Prisma.TransactionClient;
 
@@ -247,8 +249,12 @@ export async function processDueEnrollments(now: Date = new Date()) {
         return "duplicate-skipped";
       }
 
-      const body = renderTemplate(step.message, templateVars(quote, customer));
+      let body = renderTemplate(step.message, templateVars(quote, customer));
       const subject = step.subject ?? renderTemplate(quote.language === "FR" ? "Suivi: {{quoteTitle}}" : "Follow-up: {{quoteTitle}}", templateVars(quote, customer));
+
+      if (step.channel === "EMAIL") {
+        body = appendUnsubscribeFooter(body, buildUnsubscribeUrl(customer, "EMAIL"), quote.language);
+      }
 
       if (step.channel === "MANUAL_TASK") {
         const message = await tx.message.create({
@@ -275,17 +281,17 @@ export async function processDueEnrollments(now: Date = new Date()) {
         return "manual-task-created";
       }
 
-      const hasConsent = step.channel === "EMAIL" ? customer.emailConsent && !!customer.email : customer.smsConsent && !!customer.phone;
-      if (!hasConsent) {
+      const gateResult = await assertSendAllowed(tx, { company, customer, companyId: company.id, channel: step.channel });
+      if (!gateResult.allowed) {
         await logActivity(tx, {
           companyId: company.id,
           quoteId: quote.id,
-          type: "MESSAGE_FAILED",
-          description: `Step skipped: customer has not given ${step.channel.toLowerCase()} consent.`,
-          metadata: { stepId: step.id, channel: step.channel },
+          type: "MESSAGE_BLOCKED_COMPLIANCE",
+          description: `Step skipped: compliance gate blocked ${step.channel.toLowerCase()} send (${gateResult.reason}).`,
+          metadata: { stepId: step.id, channel: step.channel, reason: gateResult.reason },
         });
         await advancePastStep(tx, enrollment);
-        return "skipped-no-consent";
+        return "skipped-compliance";
       }
 
       if (step.requiresApproval) {
@@ -386,6 +392,24 @@ export async function approveAndSendMessage(messageId: string, companyId: string
     }
     const channel = message.channel;
 
+    const gateResult = await assertSendAllowed(tx, {
+      company: message.quote.company,
+      customer: message.quote.customer,
+      companyId,
+      channel,
+    });
+    if (!gateResult.allowed) {
+      await logActivity(tx, {
+        companyId,
+        quoteId: message.quoteId,
+        userId,
+        type: "MESSAGE_BLOCKED_COMPLIANCE",
+        description: `Approved message blocked by compliance gate (${gateResult.reason}).`,
+        metadata: { messageId: message.id, reason: gateResult.reason },
+      });
+      throw new Error(`COMPLIANCE_BLOCKED_${gateResult.reason}`);
+    }
+
     const sendResult = await sendViaChannel(channel, {
       to: channel === "EMAIL" ? message.quote.customer.email! : message.quote.customer.phone!,
       subject: message.subject ?? "",
@@ -431,13 +455,31 @@ export async function retryMessage(messageId: string, companyId: string, userId:
   return prisma.$transaction(async (tx) => {
     const message = await tx.message.findFirstOrThrow({
       where: { id: messageId, companyId, status: "FAILED" },
-      include: { quote: { include: { customer: true } } },
+      include: { quote: { include: { customer: true, company: true } } },
     });
 
     if (message.channel === "MANUAL_TASK") {
       throw new Error("MANUAL_TASK_CANNOT_BE_RETRIED");
     }
     const channel = message.channel;
+
+    const gateResult = await assertSendAllowed(tx, {
+      company: message.quote.company,
+      customer: message.quote.customer,
+      companyId,
+      channel,
+    });
+    if (!gateResult.allowed) {
+      await logActivity(tx, {
+        companyId,
+        quoteId: message.quoteId,
+        userId,
+        type: "MESSAGE_BLOCKED_COMPLIANCE",
+        description: `Retry blocked by compliance gate (${gateResult.reason}).`,
+        metadata: { messageId: message.id, reason: gateResult.reason },
+      });
+      throw new Error(`COMPLIANCE_BLOCKED_${gateResult.reason}`);
+    }
 
     const sendResult = await sendViaChannel(channel, {
       to: channel === "EMAIL" ? message.quote.customer.email! : message.quote.customer.phone!,

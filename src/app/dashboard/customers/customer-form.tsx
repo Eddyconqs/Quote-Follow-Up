@@ -109,6 +109,7 @@ export function CustomerForm({
             {dict.customers.smsConsent}
           </Label>
         </div>
+        <p className="text-xs text-muted-foreground">{dict.customers.consentDesc}</p>
       </div>
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
